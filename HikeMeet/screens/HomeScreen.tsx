@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ImageBackground, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ImageBackground, Dimensions, TouchableOpacity, Image } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 
 // הגדרת הסוג של פרמטרי הניווט
@@ -22,9 +22,22 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
       style={styles.background}
       resizeMode="cover"
     >
-      <View style={styles.overlay}>
+      {/* שכבת שקיפות מעל תמונת הרקע */}
+      <View style={styles.overlay} />
+
+      {/* אזור תמונת הפרופיל בעיגול */}
+      <View style={styles.profileContainer}>
+        <TouchableOpacity onPress={() => navigation.navigate('Profile')}>
+          <Image
+            source={require('../assets/profile.jpg')} // תוודא שתמונת הפרופיל שלך נמצאת בתיקיית assets
+            style={styles.profileImage}
+          />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.content}>
         <Text style={styles.title}>Welcome to HikeMeet!</Text>
-        
+
         {/* כפתור 1 - חיפוש טיולים */}
         <TouchableOpacity
           style={styles.button}
@@ -33,13 +46,6 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.buttonText}>Search for Trips</Text>
         </TouchableOpacity>
 
-        {/* כפתור 2 - פרופיל */}
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#FF6347' }]} // רקע בצבע שונה עבור הכפתור השני
-          onPress={() => navigation.navigate('Profile')}
-        >
-          <Text style={styles.buttonText}>Go to Profile</Text>
-        </TouchableOpacity>
       </View>
     </ImageBackground>
   );
@@ -54,10 +60,29 @@ const styles = StyleSheet.create({
     alignItems: 'center', // המרכזת את התוכן על הציר האופקי
   },
   overlay: {
-    backgroundColor: 'rgba(0, 0, 0, 0.3)', // שכבת שקיפות עדינה יותר (30%)
-    padding: 20,
-    borderRadius: 10, // פינות מעוגלות כדי ליצור מראה אסתטי
-    justifyContent: 'center', 
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)', // שכבת שקיפות כהה על כל המסך (50% שקוף)
+  },
+  profileContainer: {
+    position: 'absolute',
+    top: 40, // מיקום התמונה בצד ימין למעלה
+    right: 20, // מיקום התמונה בצד ימין למעלה
+  },
+  profileImage: {
+    width: 50, // גודל התמונה
+    height: 50, // גודל התמונה
+    marginTop:18,
+    borderRadius: 25, // כדי ליצור עיגול לתמונה
+    borderWidth: 2, // מסגרת מסביב לתמונה
+    borderColor: '#fff', // צבע המסגרת לבן
+  },
+  content: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
   },
   title: {
@@ -73,6 +98,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     borderRadius: 25, // פינות מעוגלות
     marginBottom: 15, // רווח בין הכפתורים
+    marginTop: 15, 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
