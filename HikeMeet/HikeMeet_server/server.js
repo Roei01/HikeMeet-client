@@ -1,73 +1,64 @@
-require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const multer = require('multer');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const cors = require('cors');
-const path = require('path');
+const bodyParser = require('body-parser');
 
-// הגדרות Express
 const app = express();
 app.use(cors());
-app.use(express.json());
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(bodyParser.json());
 
-// חיבור ל-MongoDB
-mongoose.connect(process.env.MONGO_URI, { useNewUrlParser: true, useUnifiedTopology: true })
-  .then(() => console.log('Connected to MongoDB'))
-  .catch((err) => console.error('MongoDB connection error:', err));
+const User = require('./models/User'); // ניצור את המודל הזה בהמשך
 
-// סכמת המשתמש
-const userSchema = new mongoose.Schema({
-  name: String,
-  location: String,
-  bio: String,
-  profileImage: String, // קישור לתמונת הפרופיל
+mongoose.connect('mongodb://localhost:27017/hikemeet', {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
 });
 
-const User = mongoose.model('User', userSchema);
+// API לרישום משתמש
+app.post('/api/register', async (req, res) => {
+  const { username, firstName, lastName, email, password } = req.body;
 
-// הגדרת Multer להעלאת תמונות
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/');
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + path.extname(file.originalname)); // שם ייחודי לתמונה
-  },
-});
-
-const upload = multer({ storage });
-
-// API להעלאת תמונת פרופיל
-app.post('/upload', upload.single('profileImage'), async (req, res) => {
-  try {
-    const { name, location, bio } = req.body;
-    const profileImage = `/uploads/${req.file.filename}`;
-    
-    const newUser = new User({
-      name,
-      location,
-      bio,
-      profileImage,
-    });
-
-    await newUser.save();
-    res.json({ message: 'Profile uploaded successfully', user: newUser });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  // בדיקה אם המשתמש כבר קיים
+  const existingUser = await User.findOne({ $or: [{ email }, { username }] });
+  if (existingUser) {
+    return res.status(400).json({ success: false, message: 'Username or Email already exists' });
   }
+
+  // הצפנת הסיסמא
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // יצירת משתמש חדש
+  const user = new User({ username, firstName, lastName, email, password: hashedPassword });
+  await user.save();
+
+  res.json({ success: true });
 });
 
-// API לקבלת פרטי משתמש
-app.get('/user/:id', async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+// API להתחברות משתמש
+app.post('/api/login', async (req, res) => {
+  const { username, password } = req.body;
+
+  // בדיקה אם המשתמש קיים
+  const user = await User.findOne({ username });
+  if (!user) {
+    return res.status(400).json({ success: false, message: 'Invalid username or password' });
   }
+
+  // בדיקת סיסמא
+  const isMatch = await bcrypt.compare(password, user.password);
+  if (!isMatch) {
+    return res.status(400).json({ success: false, message: 'Invalid username or password' });
+  }
+
+  // יצירת טוקן JWT
+  const token = jwt.sign({ id: user._id }, 'your_jwt_secret', { expiresIn: '1h' });
+
+  res.json({ success: true, token });
 });
 
-// האזנה לשרת
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
