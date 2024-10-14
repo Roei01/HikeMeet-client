@@ -7,6 +7,7 @@ type RootStackParamList = {
   Home: undefined;
   Search: undefined;
   Profile: undefined;
+
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -46,6 +47,13 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
           <Text style={styles.buttonText}>Search for Trips</Text>
         </TouchableOpacity>
 
+        {/* כפתור 2 - פרופיל */}
+        <TouchableOpacity
+          style={[styles.button, { backgroundColor: '#FF6347' }]} // רקע בצבע שונה עבור הכפתור השני
+          onPress={() => navigation.navigate('Profile')}
+        >
+          <Text style={styles.buttonText}>Search By Area</Text>
+        </TouchableOpacity>
       </View>
     </ImageBackground>
   );
@@ -75,7 +83,6 @@ const styles = StyleSheet.create({
   profileImage: {
     width: 50, // גודל התמונה
     height: 50, // גודל התמונה
-    marginTop:18,
     borderRadius: 25, // כדי ליצור עיגול לתמונה
     borderWidth: 2, // מסגרת מסביב לתמונה
     borderColor: '#fff', // צבע המסגרת לבן
@@ -98,7 +105,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 30,
     borderRadius: 25, // פינות מעוגלות
     marginBottom: 15, // רווח בין הכפתורים
-    marginTop: 15, 
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,

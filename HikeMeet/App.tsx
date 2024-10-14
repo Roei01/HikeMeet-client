@@ -10,6 +10,8 @@ import ProfileScreen from './screens/ProfileScreen';
 import SearchScreen from './screens/SearchScreen';
 import ChatScreen from './screens/ChatScreen';
 import ReviewScreen from './screens/ReviewScreen';
+import LoginScreen from './screens/LoginScreen';
+import SignUpScreen from './screens/SignUpScreen';
 
 type RootStackParamList = {
   Home: undefined;
@@ -17,6 +19,10 @@ type RootStackParamList = {
   Search: undefined;
   Chat: undefined;
   Review: undefined;
+  Login: undefined;
+  SignUp: undefined;
+  SearchByArea: undefined; // הוספת SearchByArea
+
 };
 
 const Stack = createStackNavigator<RootStackParamList>();
@@ -25,16 +31,19 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator
-        initialRouteName="Home"
+        initialRouteName="Login" // הדף הראשון - התחברות
         screenOptions={{
           headerShown: false, // הסרת הכותרות מכל המסכים
         }}
       >
+        <Stack.Screen name="Login" component={LoginScreen} />
+        <Stack.Screen name="SignUp" component={SignUpScreen} />
         <Stack.Screen name="Home" component={HomeScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
         <Stack.Screen name="Search" component={SearchScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="Review" component={ReviewScreen} />
+
       </Stack.Navigator>
       <StatusBar style="auto" />
     </NavigationContainer>
