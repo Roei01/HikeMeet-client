@@ -1,101 +1,156 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Image, StyleSheet, Dimensions, Button, ActivityIndicator, Alert } from 'react-native';
-import axios from 'axios';
-import AsyncStorage from '@react-native-async-storage/async-storage'; // הוסף את זה לאחסון הטוקן
+import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import axios from 'axios'; 
+import { StackNavigationProp } from '@react-navigation/stack';
+import { RootStackParamList } from '../types'; // או כל קובץ שמכיל את הניווט שלך
 
-const ProfileScreen = () => {
-  const [profileData, setProfileData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
 
-  // פונקציה למשוך את פרטי המשתמש
-  const fetchProfileData = async () => {
+type SignUpScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SignUp'>;
+
+interface Props {
+  navigation: SignUpScreenNavigationProp;
+}
+
+const SignUpScreen: React.FC<Props> = ({ navigation }) => {
+  const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [timer, setTimer] = useState(60); // טיימר לקוד
+  const [isResendAllowed, setIsResendAllowed] = useState(false);
+
+  const handleSignUp = async () => {
     try {
-      // איסוף הטוקן מה-AsyncStorage
-      const token = await AsyncStorage.getItem('jwtToken'); 
-      console.log('Token retrieved:', token); // בדיקה אם הטוקן אכן נשלף
-
-      if (!token) {
-        Alert.alert('Error', 'Token not found, please login again');
-        return;
+      const response = await axios.post('http://172.20.10.4:3000/api/request-verification', { username, email, password });
+      if (response.data.success) {
+        Alert.alert('Success', 'Verification code sent to your email');
+        setIsVerifying(true);
+        startTimer(); // הפעלת טיימר
+      } else {
+        Alert.alert('Error', response.data.message);
       }
-
-      // קריאה לשרת עם הטוקן
-      const response = await axios.get('http://172.20.10.4:3000/api/profile', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      console.log('Profile data response:', response.data); // הדפסת תגובת השרת
-
-      setProfileData(response.data);
-      setLoading(false);
     } catch (error) {
-      console.error('Error fetching profile data:', error);
-
-      setLoading(false);
-      Alert.alert('Error', 'Failed to fetch profile data');
+      console.error('Error:', error);
+      Alert.alert('Error', 'Something went wrong, please try again.');
     }
   };
 
-  // קריאה לפונקציה לאחר שהרכיב נטען
-  useEffect(() => {
-    fetchProfileData();
-  }, []);
+  const handleVerifyCode = async () => {
+    try {
+      const response = await axios.post('http://172.20.10.4:3000/api/verify-code', { email, code: verificationCode });
+      if (response.data.success) {
+        Alert.alert('Success', 'Account verified and created!');
+        navigation.navigate('Login');
+      } else {
+        Alert.alert('Error', response.data.message);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      Alert.alert('Error', 'Verification failed, please try again.');
+    }
+  };
 
-  // טעינת המידע
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#1E90FF" />
-      </View>
-    );
-  }
+  const handleResendCode = async () => {
+    try {
+      const response = await axios.post('http://172.20.10.4:3000/api/resend-code', { email });
+      if (response.data.success) {
+        Alert.alert('Success', 'New verification code sent');
+        startTimer();
+      } else {
+        Alert.alert('Error', response.data.message);
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      Alert.alert('Error', 'Failed to resend code');
+    }
+  };
 
-  // במידה ויש בעיה בפרופיל
-  if (!profileData) {
-    console.log('No profile data found');
-    return (
-      <View style={styles.container}>
-        <Text>Error loading profile data</Text>
-      </View>
-    );
-  }
+  // הפעלת טיימר למשך 60 שניות
+  const startTimer = () => {
+    setIsResendAllowed(false);
+    setTimer(60);
+    const interval = setInterval(() => {
+      setTimer((prevTimer) => {
+        if (prevTimer === 1) {
+          clearInterval(interval);
+          setIsResendAllowed(true); // אפשרות לשלוח שוב קוד
+        }
+        return prevTimer - 1;
+      });
+    }, 1000);
+  };
 
   return (
     <View style={styles.container}>
-      {/* תמונת פרופיל */}
-      <Image
-        source={{ uri: profileData.profileImageUrl }} // שימוש בתמונה מהשרת
-        style={styles.profileImage}
-      />
+      <Text style={styles.title}>Create Your Account</Text>
 
-      {/* פרטי המשתמש */}
-      <Text style={styles.name}>{profileData.name}</Text>
-      <Text style={styles.location}>{profileData.location}</Text>
-      <Text style={styles.bio}>{profileData.bio}</Text>
+      {!isVerifying ? (
+        <>
+          <TextInput
+            placeholder="Username"
+            style={styles.input}
+            value={username}
+            onChangeText={setUsername}
+            placeholderTextColor="#aaa"
+          />
+          <TextInput
+            placeholder="Email"
+            style={styles.input}
+            value={email}
+            onChangeText={setEmail}
+            placeholderTextColor="#aaa"
+          />
+          <TextInput
+            placeholder="Password"
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            placeholderTextColor="#aaa"
+          />
+          <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+            <Text style={styles.buttonText}>Send Verification Code</Text>
+            
+          </TouchableOpacity>
+          <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
+              Already have an account? <Text style={styles.linkText}>Login here</Text>
+          </Text>
 
-      {/* סטטיסטיקות המשתמש */}
-      <View style={styles.statsContainer}>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{profileData.trips}</Text>
-          <Text style={styles.statLabel}>Trips</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{profileData.rating}</Text>
-          <Text style={styles.statLabel}>Rating</Text>
-        </View>
-        <View style={styles.statBox}>
-          <Text style={styles.statNumber}>{profileData.reviews}</Text>
-          <Text style={styles.statLabel}>Reviews</Text>
-        </View>
-      </View>
+        </>
+      ) : (
+        <>
+          <TextInput
+            placeholder="Enter Verification Code"
+            style={styles.input}
+            value={verificationCode}
+            onChangeText={setVerificationCode}
+            keyboardType="number-pad"
+            placeholderTextColor="#aaa"
+          />
+          <Text style={styles.timerText}>
+            {timer > 0 ? `You can resend the code in ${timer} seconds` : 'You can resend the code now'}
+          </Text>
 
-      {/* כפתורים לפעולות נוספות */}
-      <View style={styles.buttonContainer}>
-        <Button title="Edit Profile" onPress={() => alert('Edit Profile')} color="#1E90FF" />
-        <Button title="My Trips" onPress={() => alert('My Trips')} color="#FF6347" />
-      </View>
+          <TouchableOpacity style={styles.button} onPress={handleVerifyCode}>
+            <Text style={styles.buttonText}>Verify Code</Text>
+          </TouchableOpacity>
+
+
+          <TouchableOpacity
+            style={[styles.button, isResendAllowed ? null : styles.disabledButton]}
+            onPress={handleResendCode}
+            disabled={!isResendAllowed}
+          >
+            <Text style={styles.buttonText}>Resend Code</Text>
+            
+          </TouchableOpacity>
+          <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
+              Already have an account? <Text style={styles.linkText}>Login here</Text>
+          </Text>
+
+        </>
+      )}
     </View>
   );
 };
@@ -104,59 +159,58 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    alignItems: 'center',
     padding: 20,
-    backgroundColor: '#f8f8f8',
+    backgroundColor: '#f8f9fa',
   },
-  profileImage: {
-    width: 150,
-    height: 150,
-    borderRadius: 75,
-    marginBottom: 20,
-    borderColor: '#ddd',
-    borderWidth: 2,
-  },
-  name: {
+  title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
-  },
-  location: {
-    fontSize: 16,
-    color: '#777',
-    marginBottom: 10,
-  },
-  bio: {
-    fontSize: 14,
-    color: '#555',
+    marginBottom: 20,
     textAlign: 'center',
-    marginBottom: 20,
-    paddingHorizontal: 20,
   },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    width: '80%',
-    marginBottom: 20,
-  },
-  statBox: {
-    alignItems: 'center',
-  },
-  statNumber: {
-    fontSize: 22,
-    fontWeight: 'bold',
+  input: {
+    height: 50,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    fontSize: 16,
     color: '#333',
+    backgroundColor: '#fff',
   },
-  statLabel: {
-    fontSize: 14,
-    color: '#777',
+  button: {
+    backgroundColor: '#FF6347',
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 10,
   },
-  buttonContainer: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 20,
+  disabledButton: {
+    backgroundColor: '#ccc',
   },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  timerText: {
+    textAlign: 'center',
+    color: '#555',
+    marginBottom: 15,
+  },
+  link: {
+    marginTop: 15,
+    textAlign: 'center',
+    color: '#555',
+    fontSize: 16,
+  },
+  linkText: {
+    color: '#FF6347',
+    fontWeight: 'bold',
+  },
+
 });
 
-export default ProfileScreen;
+export default SignUpScreen;
