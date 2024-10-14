@@ -1,34 +1,88 @@
-import React from 'react';
-import { View, Text, Image, StyleSheet, Dimensions, Button } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, Button, ActivityIndicator, Alert } from 'react-native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // אחסון הטוקן
 
 const ProfileScreen = () => {
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  // פונקציה למשוך את פרטי המשתמש
+  const fetchProfileData = async () => {
+    try {
+      // משוך את הטוקן מ-AsyncStorage
+      const token = await AsyncStorage.getItem('jwtToken');
+      console.log('Token:', token); // הדפסה לבדיקה אם הטוקן אכן נשלף
+
+      if (!token) {
+        Alert.alert('Error', 'Token not found, please login again');
+        return;
+      }
+
+      // קריאה לשרת עם הטוקן
+      const response = await axios.get('http://172.20.10.4:3000/api/profile', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      console.log('Profile data response:', response.data); // הדפסת התגובה מהשרת
+
+      setProfileData(response.data);
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching profile data:', error);
+      setLoading(false);
+      Alert.alert('Error', 'Failed to fetch profile data');
+    }
+  };
+
+  // קריאה לפונקציה לאחר שהרכיב נטען
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#1E90FF" />
+      </View>
+    );
+  }
+
+  if (!profileData) {
+    return (
+      <View style={styles.container}>
+        <Text>Error loading profile data</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
       {/* תמונת פרופיל */}
       <Image
-        source={require('../assets/profile.jpg')} // עדכון לשימוש בתמונה מקומית
+        source={{ uri: profileData.profileImageUrl }} // שימוש בתמונה מהשרת
         style={styles.profileImage}
       />
 
       {/* פרטי המשתמש */}
-      <Text style={styles.name}>John Doe</Text>
-      <Text style={styles.location}>New York, USA</Text>
-      <Text style={styles.bio}>
-        A passionate traveler who loves exploring new places and meeting new people.
-      </Text>
+      <Text style={styles.name}>{profileData.name}</Text>
+      <Text style={styles.location}>{profileData.location}</Text>
+      <Text style={styles.bio}>{profileData.bio}</Text>
 
-      {/* סטטיסטיקות המטייל */}
+      {/* סטטיסטיקות המשתמש */}
       <View style={styles.statsContainer}>
         <View style={styles.statBox}>
-          <Text style={styles.statNumber}>24</Text>
+          <Text style={styles.statNumber}>{profileData.trips}</Text>
           <Text style={styles.statLabel}>Trips</Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={styles.statNumber}>4.8</Text>
+          <Text style={styles.statNumber}>{profileData.rating}</Text>
           <Text style={styles.statLabel}>Rating</Text>
         </View>
         <View style={styles.statBox}>
-          <Text style={styles.statNumber}>102</Text>
+          <Text style={styles.statNumber}>{profileData.reviews}</Text>
           <Text style={styles.statLabel}>Reviews</Text>
         </View>
       </View>

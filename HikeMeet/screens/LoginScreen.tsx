@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import axios from 'axios'; // הוסף את axios לביצוע בקשות לשרת
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types';
@@ -11,34 +11,25 @@ type Props = {
 };
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
-  const [username, setUsername] = useState(''); // אחסון שם המשתמש
-  const [password, setPassword] = useState(''); // אחסון הסיסמה
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
-  // פונקציה לטיפול באירוע התחברות
   const handleLogin = async () => {
-    // אם לא הוכנסו שם משתמש או סיסמה, מציגים הודעת שגיאה
     if (!username || !password) {
       Alert.alert('Error', 'Please enter both username and password');
       return;
     }
 
     try {
-      // קריאה לשרת דרך axios לכתובת ה-API
-      const response = await axios.post('http://172.20.10.4:3000/api/login', {
-        username,
-        password,
-      });
+      const response = await axios.post('http://172.20.10.4:3000/api/login', { username, password });
 
-      // בדיקה אם ההתחברות הצליחה
       if (response.data.success) {
-        Alert.alert('Success', 'Login successful!'); // הודעת הצלחה
-        navigation.navigate('Home'); // הפניה לדף הבית אם ההתחברות הצליחה
+        Alert.alert('Success', 'Login successful!');
+        navigation.navigate('Home');
       } else {
-        // במידה וההתחברות נכשלה, הצגת הודעת השגיאה שהתקבלה מהשרת
         Alert.alert('Error', response.data.message);
       }
     } catch (error) {
-      // טיפול בשגיאות כמו בעיות חיבור לשרת או שגיאות אחרות
       console.error('Login error:', error);
       Alert.alert('Error', 'Something went wrong, please try again.');
     }
@@ -46,32 +37,31 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <View style={styles.container}>
-      {/* כותרת דף ההתחברות */}
-      <Text style={styles.title}>Login</Text>
+      <Text style={styles.title}>Welcome Back!</Text>
 
-      {/* שדה להזנת שם המשתמש */}
       <TextInput
         placeholder="Username"
         style={styles.input}
         value={username}
         onChangeText={setUsername}
+        placeholderTextColor="#aaa"
       />
 
-      {/* שדה להזנת הסיסמה */}
       <TextInput
         placeholder="Password"
         style={styles.input}
         value={password}
         onChangeText={setPassword}
-        secureTextEntry // שדה הסיסמה יהיה מוסתר
+        secureTextEntry
+        placeholderTextColor="#aaa"
       />
 
-      {/* כפתור ההתחברות */}
-      <Button title="Login" onPress={handleLogin} />
+      <TouchableOpacity style={styles.button} onPress={handleLogin}>
+        <Text style={styles.buttonText}>Login</Text>
+      </TouchableOpacity>
 
-      {/* קישור לדף ההרשמה במידה ואין חשבון */}
       <Text style={styles.link} onPress={() => navigation.navigate('SignUp')}>
-        Don't have an account? Sign up here
+        Don't have an account? <Text style={styles.linkText}>Sign up</Text>
       </Text>
     </View>
   );
@@ -82,25 +72,47 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     padding: 20,
+    backgroundColor: '#f8f9fa',
   },
   title: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: 'bold',
+    color: '#333',
     marginBottom: 20,
     textAlign: 'center',
   },
   input: {
-    height: 40,
-    borderColor: 'gray',
+    height: 50,
+    borderColor: '#ddd',
     borderWidth: 1,
-    marginBottom: 10,
-    paddingHorizontal: 10,
-    borderRadius: 5,
+    borderRadius: 8,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    fontSize: 16,
+    color: '#333',
+    backgroundColor: '#fff',
+  },
+  button: {
+    backgroundColor: '#1E90FF',
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginVertical: 10,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   link: {
-    color: 'blue',
-    marginTop: 20,
+    marginTop: 15,
     textAlign: 'center',
+    color: '#555',
+    fontSize: 16,
+  },
+  linkText: {
+    color: '#1E90FF',
+    fontWeight: 'bold',
   },
 });
 

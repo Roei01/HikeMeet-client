@@ -1,65 +1,101 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
-import axios from 'axios'; // הוסף את axios
-import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../types'; // עדכון לפי קובץ ה-TypeScript שלך
+import React, { useState, useEffect } from 'react';
+import { View, Text, Image, StyleSheet, Dimensions, Button, ActivityIndicator, Alert } from 'react-native';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage'; // הוסף את זה לאחסון הטוקן
 
-type SignUpScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SignUp'>;
+const ProfileScreen = () => {
+  const [profileData, setProfileData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-type Props = {
-  navigation: SignUpScreenNavigationProp;
-};
-
-const SignUpScreen: React.FC<Props> = ({ navigation }) => {
-  const [username, setUsername] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  
-  // נוודא שהכתובת נכונה, עם ה-IP של השרת שלנו
-  const handleSignUp = async () => {
+  // פונקציה למשוך את פרטי המשתמש
+  const fetchProfileData = async () => {
     try {
-      const response = await axios.post('http://172.20.10.4:3000/api/register', {
-        username,
-        email,
-        password,
+      // איסוף הטוקן מה-AsyncStorage
+      const token = await AsyncStorage.getItem('jwtToken'); 
+      console.log('Token retrieved:', token); // בדיקה אם הטוקן אכן נשלף
+
+      if (!token) {
+        Alert.alert('Error', 'Token not found, please login again');
+        return;
+      }
+
+      // קריאה לשרת עם הטוקן
+      const response = await axios.get('http://172.20.10.4:3000/api/profile', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      // בדיקה אם ההרשמה הצליחה
-      if (response.data.success) {
-        Alert.alert('Success', 'Account created successfully!');
-        navigation.navigate('Login'); // מעבר לדף ההתחברות
-      } else {
-        Alert.alert('Error', response.data.message); // הצגת שגיאה מהשרת
-      }
+      console.log('Profile data response:', response.data); // הדפסת תגובת השרת
+
+      setProfileData(response.data);
+      setLoading(false);
     } catch (error) {
-      // בדיקת שגיאה נוספת
-      console.error('Error:', error);
+      console.error('Error fetching profile data:', error);
+
+      setLoading(false);
+      Alert.alert('Error', 'Failed to fetch profile data');
     }
   };
 
+  // קריאה לפונקציה לאחר שהרכיב נטען
+  useEffect(() => {
+    fetchProfileData();
+  }, []);
+
+  // טעינת המידע
+  if (loading) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#1E90FF" />
+      </View>
+    );
+  }
+
+  // במידה ויש בעיה בפרופיל
+  if (!profileData) {
+    console.log('No profile data found');
+    return (
+      <View style={styles.container}>
+        <Text>Error loading profile data</Text>
+      </View>
+    );
+  }
+
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Sign Up</Text>
-      <TextInput
-        placeholder="Username"
-        style={styles.input}
-        value={username}
-        onChangeText={setUsername}
+      {/* תמונת פרופיל */}
+      <Image
+        source={{ uri: profileData.profileImageUrl }} // שימוש בתמונה מהשרת
+        style={styles.profileImage}
       />
-      <TextInput
-        placeholder="Email"
-        style={styles.input}
-        value={email}
-        onChangeText={setEmail}
-      />
-      <TextInput
-        placeholder="Password"
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-      />
-      <Button title="Sign Up" onPress={handleSignUp} />
+
+      {/* פרטי המשתמש */}
+      <Text style={styles.name}>{profileData.name}</Text>
+      <Text style={styles.location}>{profileData.location}</Text>
+      <Text style={styles.bio}>{profileData.bio}</Text>
+
+      {/* סטטיסטיקות המשתמש */}
+      <View style={styles.statsContainer}>
+        <View style={styles.statBox}>
+          <Text style={styles.statNumber}>{profileData.trips}</Text>
+          <Text style={styles.statLabel}>Trips</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={styles.statNumber}>{profileData.rating}</Text>
+          <Text style={styles.statLabel}>Rating</Text>
+        </View>
+        <View style={styles.statBox}>
+          <Text style={styles.statNumber}>{profileData.reviews}</Text>
+          <Text style={styles.statLabel}>Reviews</Text>
+        </View>
+      </View>
+
+      {/* כפתורים לפעולות נוספות */}
+      <View style={styles.buttonContainer}>
+        <Button title="Edit Profile" onPress={() => alert('Edit Profile')} color="#1E90FF" />
+        <Button title="My Trips" onPress={() => alert('My Trips')} color="#FF6347" />
+      </View>
     </View>
   );
 };
@@ -68,22 +104,59 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
+    backgroundColor: '#f8f8f8',
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
+  profileImage: {
+    width: 150,
+    height: 150,
+    borderRadius: 75,
     marginBottom: 20,
-    textAlign: 'center',
+    borderColor: '#ddd',
+    borderWidth: 2,
   },
-  input: {
-    height: 40,
-    borderColor: 'gray',
-    borderWidth: 1,
+  name: {
+    fontSize: 28,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  location: {
+    fontSize: 16,
+    color: '#777',
     marginBottom: 10,
-    paddingHorizontal: 10,
-    borderRadius: 5,
+  },
+  bio: {
+    fontSize: 14,
+    color: '#555',
+    textAlign: 'center',
+    marginBottom: 20,
+    paddingHorizontal: 20,
+  },
+  statsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '80%',
+    marginBottom: 20,
+  },
+  statBox: {
+    alignItems: 'center',
+  },
+  statNumber: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  statLabel: {
+    fontSize: 14,
+    color: '#777',
+  },
+  buttonContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    marginTop: 20,
   },
 });
 
-export default SignUpScreen;
+export default ProfileScreen;
