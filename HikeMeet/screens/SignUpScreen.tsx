@@ -128,6 +128,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
             keyboardType="number-pad"
             placeholderTextColor="#aaa"
           />
+          
           <Text style={styles.timerText}>
             {timer > 0 ? `You can resend the code in ${timer} seconds` : 'You can resend the code now'}
           </Text>
