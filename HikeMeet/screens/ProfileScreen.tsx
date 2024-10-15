@@ -67,7 +67,7 @@ const ProfileScreen = () => {
       />
 
       {/* פרטי המשתמש */}
-      <Text style={styles.name}>{profileData.name}</Text>
+      <Text style={styles.name}>{profileData.firstName}</Text>
       <Text style={styles.location}>{profileData.location}</Text>
       <Text style={styles.bio}>{profileData.bio}</Text>
 

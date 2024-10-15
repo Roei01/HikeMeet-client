@@ -7,7 +7,7 @@ type RootStackParamList = {
   Home: undefined;
   Search: undefined;
   Profile: undefined;
-
+  SearchByArea: undefined;
 };
 
 type HomeScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Home'>;
@@ -50,7 +50,7 @@ const HomeScreen: React.FC<Props> = ({ navigation }) => {
         {/* כפתור 2 - פרופיל */}
         <TouchableOpacity
           style={[styles.button, { backgroundColor: '#FF6347' }]} // רקע בצבע שונה עבור הכפתור השני
-          onPress={() => navigation.navigate('Profile')}
+          onPress={() => navigation.navigate('SearchByArea')}
         >
           <Text style={styles.buttonText}>Search By Area</Text>
         </TouchableOpacity>

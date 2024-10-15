@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import axios from 'axios'; // הוסף את axios לביצוע בקשות לשרת
+import axios from 'axios'; 
+import AsyncStorage from '@react-native-async-storage/async-storage'; // אחסון הטוקן
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types';
 
@@ -11,6 +12,7 @@ type Props = {
 };
 
 const LoginScreen: React.FC<Props> = ({ navigation }) => {
+
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
 
@@ -24,7 +26,11 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
       const response = await axios.post('http://172.20.10.4:3000/api/login', { username, password });
 
       if (response.data.success) {
+        // שמור את ה-JWT ב-AsyncStorage
+        await AsyncStorage.setItem('jwtToken', response.data.token);
         Alert.alert('Success', 'Login successful!');
+
+        // הפנה את המשתמש לפרופיל לאחר התחברות מוצלחת
         navigation.navigate('Home');
       } else {
         Alert.alert('Error', response.data.message);

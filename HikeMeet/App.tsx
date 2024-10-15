@@ -12,6 +12,7 @@ import ChatScreen from './screens/ChatScreen';
 import ReviewScreen from './screens/ReviewScreen';
 import LoginScreen from './screens/LoginScreen';
 import SignUpScreen from './screens/SignUpScreen';
+import SearchByArea from './screens/SearchByAreaScreen';
 
 type RootStackParamList = {
   Home: undefined;
@@ -43,6 +44,7 @@ export default function App() {
         <Stack.Screen name="Search" component={SearchScreen} />
         <Stack.Screen name="Chat" component={ChatScreen} />
         <Stack.Screen name="Review" component={ReviewScreen} />
+        <Stack.Screen name="SearchByArea" component={SearchByArea}/>
 
       </Stack.Navigator>
       <StatusBar style="auto" />
