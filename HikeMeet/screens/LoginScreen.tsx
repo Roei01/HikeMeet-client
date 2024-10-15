@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import axios from 'axios'; 
-import AsyncStorage from '@react-native-async-storage/async-storage'; // אחסון הטוקן
+import { View, Text, Alert, StyleSheet } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { StackNavigationProp } from '@react-navigation/stack';
 import { RootStackParamList } from '../types';
+import { loginUser } from '../services/login';
+import LoginForm from '../components/LoginForm';
 
 type LoginScreenNavigationProp = StackNavigationProp<RootStackParamList, 'Login'>;
 
@@ -23,17 +24,16 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
     }
 
     try {
-      const response = await axios.post('http://172.20.10.4:3000/api/login', { username, password });
+      const data = await loginUser(username, password);
 
-      if (response.data.success) {
-        // שמור את ה-JWT ב-AsyncStorage
-        await AsyncStorage.setItem('jwtToken', response.data.token);
+      if (data.success) {
+        await AsyncStorage.setItem('jwtToken', data.token);
         Alert.alert('Success', 'Login successful!');
 
         // הפנה את המשתמש לפרופיל לאחר התחברות מוצלחת
         navigation.navigate('Home');
       } else {
-        Alert.alert('Error', response.data.message);
+        Alert.alert('Error', data.message);
       }
     } catch (error) {
       console.error('Login error:', error);
@@ -44,27 +44,15 @@ const LoginScreen: React.FC<Props> = ({ navigation }) => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Welcome Back!</Text>
-
-      <TextInput
-        placeholder="Username"
-        style={styles.input}
-        value={username}
-        onChangeText={setUsername}
-        placeholderTextColor="#aaa"
+      
+      <LoginForm
+        username={username}
+        password={password}
+        setUsername={setUsername}
+        setPassword={setPassword}
+        handleLogin={handleLogin}
+        styles={styles}
       />
-
-      <TextInput
-        placeholder="Password"
-        style={styles.input}
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        placeholderTextColor="#aaa"
-      />
-
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Login</Text>
-      </TouchableOpacity>
 
       <Text style={styles.link} onPress={() => navigation.navigate('SignUp')}>
         Don't have an account? <Text style={styles.linkText}>Sign up</Text>

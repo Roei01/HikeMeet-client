@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import axios from 'axios'; 
+import { View, Text, Alert, StyleSheet } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
-import { RootStackParamList } from '../types'; // או כל קובץ שמכיל את הניווט שלך
-
+import { RootStackParamList } from '../types';
+import SignUpForm from '../components/SignUpForm';
+import VerificationForm from '../components/VerificationForm';
+import { requestVerificationCode, verifyCode, resendVerificationCode } from '../services/register';
 
 type SignUpScreenNavigationProp = StackNavigationProp<RootStackParamList, 'SignUp'>;
 
@@ -17,18 +18,18 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
   const [password, setPassword] = useState('');
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
-  const [timer, setTimer] = useState(60); // טיימר לקוד
+  const [timer, setTimer] = useState(60);
   const [isResendAllowed, setIsResendAllowed] = useState(false);
 
   const handleSignUp = async () => {
     try {
-      const response = await axios.post('http://172.20.10.4:3000/api/request-verification', { username, email, password });
-      if (response.data.success) {
+      const response = await requestVerificationCode(username, email, password);
+      if (response.success) {
         Alert.alert('Success', 'Verification code sent to your email');
         setIsVerifying(true);
-        startTimer(); // הפעלת טיימר
+        startTimer();
       } else {
-        Alert.alert('Error', response.data.message);
+        Alert.alert('Error', response.message);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -38,12 +39,12 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleVerifyCode = async () => {
     try {
-      const response = await axios.post('http://172.20.10.4:3000/api/verify-code', { email, code: verificationCode });
-      if (response.data.success) {
+      const response = await verifyCode(email, verificationCode);
+      if (response.success) {
         Alert.alert('Success', 'Account verified and created!');
         navigation.navigate('Login');
       } else {
-        Alert.alert('Error', response.data.message);
+        Alert.alert('Error', response.message);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -53,12 +54,12 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
 
   const handleResendCode = async () => {
     try {
-      const response = await axios.post('http://172.20.10.4:3000/api/resend-code', { email });
-      if (response.data.success) {
+      const response = await resendVerificationCode(email);
+      if (response.success) {
         Alert.alert('Success', 'New verification code sent');
         startTimer();
       } else {
-        Alert.alert('Error', response.data.message);
+        Alert.alert('Error', response.message);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -66,7 +67,6 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
     }
   };
 
-  // הפעלת טיימר למשך 60 שניות
   const startTimer = () => {
     setIsResendAllowed(false);
     setTimer(60);
@@ -74,7 +74,7 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       setTimer((prevTimer) => {
         if (prevTimer === 1) {
           clearInterval(interval);
-          setIsResendAllowed(true); // אפשרות לשלוח שוב קוד
+          setIsResendAllowed(true);
         }
         return prevTimer - 1;
       });
@@ -86,71 +86,26 @@ const SignUpScreen: React.FC<Props> = ({ navigation }) => {
       <Text style={styles.title}>Create Your Account</Text>
 
       {!isVerifying ? (
-        <>
-          <TextInput
-            placeholder="Username"
-            style={styles.input}
-            value={username}
-            onChangeText={setUsername}
-            placeholderTextColor="#aaa"
-          />
-          <TextInput
-            placeholder="Email"
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            placeholderTextColor="#aaa"
-          />
-          <TextInput
-            placeholder="Password"
-            style={styles.input}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            placeholderTextColor="#aaa"
-          />
-          <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-            <Text style={styles.buttonText}>Send Verification Code</Text>
-            
-          </TouchableOpacity>
-          <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
-              Already have an account? <Text style={styles.linkText}>Login here</Text>
-          </Text>
-
-        </>
+        <SignUpForm
+          username={username}
+          email={email}
+          password={password}
+          setUsername={setUsername}
+          setEmail={setEmail}
+          setPassword={setPassword}
+          handleSignUp={handleSignUp}
+          styles={styles}
+        />
       ) : (
-        <>
-          <TextInput
-            placeholder="Enter Verification Code"
-            style={styles.input}
-            value={verificationCode}
-            onChangeText={setVerificationCode}
-            keyboardType="number-pad"
-            placeholderTextColor="#aaa"
-          />
-          
-          <Text style={styles.timerText}>
-            {timer > 0 ? `You can resend the code in ${timer} seconds` : 'You can resend the code now'}
-          </Text>
-
-          <TouchableOpacity style={styles.button} onPress={handleVerifyCode}>
-            <Text style={styles.buttonText}>Verify Code</Text>
-          </TouchableOpacity>
-
-
-          <TouchableOpacity
-            style={[styles.button, isResendAllowed ? null : styles.disabledButton]}
-            onPress={handleResendCode}
-            disabled={!isResendAllowed}
-          >
-            <Text style={styles.buttonText}>Resend Code</Text>
-            
-          </TouchableOpacity>
-          <Text style={styles.link} onPress={() => navigation.navigate('Login')}>
-              Already have an account? <Text style={styles.linkText}>Login here</Text>
-          </Text>
-
-        </>
+        <VerificationForm
+          verificationCode={verificationCode}
+          setVerificationCode={setVerificationCode}
+          timer={timer}
+          handleVerifyCode={handleVerifyCode}
+          handleResendCode={handleResendCode}
+          isResendAllowed={isResendAllowed}
+          styles={styles}
+        />
       )}
     </View>
   );
@@ -211,7 +166,6 @@ const styles = StyleSheet.create({
     color: '#FF6347',
     fontWeight: 'bold',
   },
-
 });
 
 export default SignUpScreen;
