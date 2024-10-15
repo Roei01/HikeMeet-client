@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { View, TextInput, Button, StyleSheet, FlatList, Text, ActivityIndicator, Image, TouchableOpacity, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, TextInput, Button, StyleSheet, FlatList, Text, ActivityIndicator, Image, TouchableOpacity, Linking, Platform } from 'react-native';
 import axios from 'axios';
+import * as Location from 'expo-location';
 
 type Attraction = {
   id: string;
@@ -8,6 +9,8 @@ type Attraction = {
   photoUrl: string;
   category: string;
   rating: number;
+  latitude: number;
+  longitude: number;
 };
 
 const SearchAttractionsScreen: React.FC = () => {
@@ -15,9 +18,27 @@ const SearchAttractionsScreen: React.FC = () => {
   const [attractions, setAttractions] = useState<Attraction[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
-  const [sortByRating, setSortByRating] = useState(false); // סינון לפי דירוג
+  const [sortByRating, setSortByRating] = useState(false);
+  const [currentLocation, setCurrentLocation] = useState<{ lat: number, lng: number } | null>(null);
 
   const categories = ['בתי חב"ד', 'פארקי אטרקציות', 'סנוטות', 'מרכזי קניות', 'חופים'];
+
+  useEffect(() => {
+    const fetchCurrentLocation = async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== 'granted') {
+        console.error('Permission to access location was denied');
+        return;
+      }
+      let location = await Location.getCurrentPositionAsync({});
+      setCurrentLocation({
+        lat: location.coords.latitude,
+        lng: location.coords.longitude,
+      });
+    };
+
+    fetchCurrentLocation();
+  }, []);
 
   const getGoogleMapsQuery = (category: string | null): string => {
     switch (category) {
@@ -26,7 +47,7 @@ const SearchAttractionsScreen: React.FC = () => {
       case 'פארקי אטרקציות':
         return 'Amusement park';
       case 'סנוטות':
-        return 'Sonata'; // לפי בקשתך, וודא שזה התכוונת לסוג של אטרקציה
+        return 'Sonata';
       case 'מרכזי קניות':
         return 'shopping centers';
       case 'חופים':
@@ -38,7 +59,7 @@ const SearchAttractionsScreen: React.FC = () => {
 
   const fetchAttractions = async () => {
     if (!location) {
-      Alert.alert('Error', 'Please enter a location.');
+      alert('Please enter a location.');
       return;
     }
 
@@ -46,13 +67,13 @@ const SearchAttractionsScreen: React.FC = () => {
 
     try {
       const apiKey = 'AIzaSyAqkAoPnQoiXechdKGAyT2ba_lvNb1uddw'; // מפתח ה-API שלך
-      const categoryQuery = getGoogleMapsQuery(selectedCategory); // הוספת הקטגוריה לשאילתת החיפוש
+      const categoryQuery = getGoogleMapsQuery(selectedCategory);
       const { data } = await axios.get(
         `https://maps.googleapis.com/maps/api/place/textsearch/json?query=${categoryQuery}+in+${location}&key=${apiKey}`
       );
 
       if (data.results.length === 0) {
-        Alert.alert('No attractions found for this location.');
+        alert('No attractions found for this location.');
         setAttractions([]);
       } else {
         const newAttractions = data.results.map((place: any) => ({
@@ -61,8 +82,10 @@ const SearchAttractionsScreen: React.FC = () => {
           photoUrl: place.photos && place.photos.length > 0
             ? `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${place.photos[0].photo_reference}&key=${apiKey}`
             : 'https://example.com/default-image.jpg',
-          category: selectedCategory || 'General', // שימוש בקטגוריה שנבחרה
+          category: selectedCategory || 'General',
           rating: place.rating || 0,
+          latitude: place.geometry.location.lat,
+          longitude: place.geometry.location.lng,
         }));
         setAttractions(newAttractions);
       }
@@ -73,10 +96,24 @@ const SearchAttractionsScreen: React.FC = () => {
     setLoading(false);
   };
 
-  // סינון לפי קטגוריה
-  const filteredAttractions = attractions;
+  const openInGoogleMaps = (name: string, lat: number, lng: number) => {
+    if (!currentLocation) {
+      alert('Current location not found.');
+      return;
+    }
 
-  // מיון לפי דירוג
+    const { lat: currentLat, lng: currentLng } = currentLocation;
+
+    // קישור לפתיחת Google Maps עם מיקום נוכחי ונקודת יעד
+    const url = Platform.select({
+      ios: `https://www.google.com/maps/dir/?api=1&origin=${currentLat},${currentLng}&destination=${lat},${lng}&destination_place_id=${name}&travelmode=driving`, // ב-iOS ייפתח דרך Apple Maps
+      android: `https://www.google.com/maps/dir/?api=1&origin=${currentLat},${currentLng}&destination=${lat},${lng}&destination_place_id=${name}&travelmode=driving`, // ב-Android ייפתח דרך Google Maps
+    });
+
+    Linking.openURL(url!).catch(err => console.error("Couldn't load page", err));
+  };
+
+  const filteredAttractions = attractions;
   const sortedAttractions = sortByRating
     ? [...filteredAttractions].sort((a, b) => b.rating - a.rating)
     : filteredAttractions;
@@ -133,24 +170,26 @@ const SearchAttractionsScreen: React.FC = () => {
         data={sortedAttractions}
         keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
-          <View style={styles.attractionItem}>
-            <Image source={{ uri: item.photoUrl }} style={styles.attractionImage} />
-            <View style={styles.attractionTextContainer}>
-              <Text style={styles.attractionName}>{item.name}</Text>
-              <Text style={styles.attractionCategory}>{item.category}</Text>
-              <View style={styles.ratingContainer}>
-                <Text style={styles.ratingText}>Rating: {item.rating}</Text>
-                <View style={styles.starsContainer}>
-                  {[...Array(Math.round(item.rating))].map((_, i) => (
-                    <Text key={i} style={styles.star}>★</Text>
-                  ))}
-                  {[...Array(5 - Math.round(item.rating))].map((_, i) => (
-                    <Text key={i} style={styles.starGray}>★</Text>
-                  ))}
+          <TouchableOpacity onPress={() => openInGoogleMaps(item.name, item.latitude, item.longitude)}>
+            <View style={styles.attractionItem}>
+              <Image source={{ uri: item.photoUrl }} style={styles.attractionImage} />
+              <View style={styles.attractionTextContainer}>
+                <Text style={styles.attractionName}>{item.name}</Text>
+                <Text style={styles.attractionCategory}>{item.category}</Text>
+                <View style={styles.ratingContainer}>
+                  <Text style={styles.ratingText}>Rating: {item.rating}</Text>
+                  <View style={styles.starsContainer}>
+                    {[...Array(Math.round(item.rating))].map((_, i) => (
+                      <Text key={i} style={styles.star}>★</Text>
+                    ))}
+                    {[...Array(5 - Math.round(item.rating))].map((_, i) => (
+                      <Text key={i} style={styles.starGray}>★</Text>
+                    ))}
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
+          </TouchableOpacity>
         )}
         ListEmptyComponent={<Text>No attractions found.</Text>}
       />
@@ -165,6 +204,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f8f8',
   },
   title: {
+    marginTop:46,
     fontSize: 28,
     fontWeight: 'bold',
     marginBottom: 20,
@@ -216,16 +256,17 @@ const styles = StyleSheet.create({
   sortButton: {
     backgroundColor: '#1E90FF',
     paddingVertical: 10,
-    paddingHorizontal: 20,
+    paddingHorizontal: 15,
     borderRadius: 20,
-    alignSelf: 'center',
     marginBottom: 20,
+    alignSelf: 'center',
   },
   sortButtonText: {
     color: '#fff',
     fontWeight: '600',
   },
   attractionItem: {
+    flexDirection: 'row',
     padding: 10,
     backgroundColor: '#fff',
     borderRadius: 10,
@@ -235,17 +276,15 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.2,
     shadowRadius: 5,
     elevation: 3,
-    flexDirection: 'row',
   },
   attractionImage: {
-    width: 100,
-    height: 100,
+    width: 80,
+    height: 80,
     borderRadius: 10,
     marginRight: 15,
   },
   attractionTextContainer: {
     flex: 1,
-    justifyContent: 'center',
   },
   attractionName: {
     fontSize: 18,
