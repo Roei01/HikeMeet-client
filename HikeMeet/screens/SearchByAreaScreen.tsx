@@ -47,7 +47,7 @@ const SearchAttractionsScreen: React.FC = () => {
       case 'פארקי אטרקציות':
         return 'Amusement park';
       case 'סנוטות':
-        return 'Sonata';
+        return 'Cenote';
       case 'מרכזי קניות':
         return 'shopping centers';
       case 'חופים':
