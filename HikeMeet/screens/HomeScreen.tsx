@@ -1,8 +1,7 @@
 import React from 'react';
-import { View, Text, StyleSheet, ImageBackground, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import ProfileImage from '../components/ProfileImage';
-import CustomButton from '../components/CustomButton';
 
 type RootStackParamList = {
   Home: undefined;
@@ -19,70 +18,106 @@ type Props = {
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
   return (
-    <ImageBackground
-      source={require('../assets/background.jpg')}
-      style={styles.background}
-      resizeMode="cover"
-    >
-      <View style={styles.overlay} />
+    <View style={styles.container}>
+      <ScrollView style={styles.contentContainer}>
+        {/* אזור תמונת הפרופיל */}
+        <View style={styles.headerContainer}>
+          <ProfileImage navigation={navigation} />
+          <Text style={styles.greetingText}>Hi, Welcome to HikeMeet!</Text>
+        </View>
 
-      {/* אזור תמונת הפרופיל */}
-      <View style={styles.profileContainer}>
-        <ProfileImage navigation={navigation} />
-      </View>
+        {/* אזור חיפוש */}
+        <View style={styles.searchContainer}>
+          <Text style={styles.searchText}>Search for Trips</Text>
+        </View>
 
-      <View style={styles.content}>
-        <Text style={styles.title}>Welcome to HikeMeet!</Text>
+        {/* קטגוריות */}
+        <View style={styles.categoriesContainer}>
+          <Text style={styles.sectionTitle}>Categories</Text>
+          <View style={styles.categoryRow}>
+            <TouchableOpacity style={styles.categoryCard} onPress={() => navigation.navigate('Search')}>
+              <Text style={styles.categoryTitle}>Search for Trips</Text>
+              <Text style={styles.categoryTaskCount}>Find amazing trips!</Text>
+            </TouchableOpacity>
 
-        {/* כפתור 1 - חיפוש טיולים */}
-        <CustomButton
-          title="Search for Trips"
-          onPress={() => navigation.navigate('Search')}
-        />
+            <TouchableOpacity style={[styles.categoryCard, { backgroundColor: '#d1e7dd' }]} onPress={() => navigation.navigate('SearchByArea')}>
+              <Text style={styles.categoryTitle}>Search By Area</Text>
+              <Text style={styles.categoryTaskCount}>Explore by location</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
 
-        {/* כפתור 2 - חיפוש לפי אזור */}
-        <CustomButton
-          title="Search By Area"
-          backgroundColor="#FF6347"
-          onPress={() => navigation.navigate('SearchByArea')}
-        />
-      </View>
-    </ImageBackground>
+        {/* כפתורים נוספים */}
+      </ScrollView>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
-  background: {
+  container: {
     flex: 1,
-    width: Dimensions.get('window').width,
-    height: Dimensions.get('window').height,
-    justifyContent: 'center',
-    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f8f8f8',
   },
-  overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-  },
-  profileContainer: {
-    position: 'absolute',
-    top: 40,
-    right: 20,
-  },
-  content: {
+  contentContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
   },
-  title: {
-    fontSize: 32,
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 40,
+    marginBottom: 20,
+  },
+  greetingText: {
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#fff',
-    marginBottom: 30,
-    textAlign: 'center',
+    color: '#333',
+    flex: 1,
+    textAlign: 'left',
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f0f0',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 20,
+  },
+  searchText: {
+    fontSize: 18,
+    color: '#888',
+    marginLeft: 10,
+  },
+  categoriesContainer: {
+    marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#333',
+    marginBottom: 10,
+  },
+  categoryRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  categoryCard: {
+    width: '48%',
+    padding: 20,
+    backgroundColor: '#fbe7c6',
+    borderRadius: 15,
+    alignItems: 'center',
+  },
+  categoryTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#333',
+  },
+  categoryTaskCount: {
+    fontSize: 14,
+    color: '#777',
+    marginTop: 10,
   },
 });
 
