@@ -3,8 +3,8 @@ import { View, TouchableOpacity, Text, StyleSheet, ScrollView } from 'react-nati
 
 const CategoryFilter = ({ categories, selectedCategory, onSelectCategory, onClearFilter }) => {
   return (
-    <View style={styles.categoryContainer}>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+    <View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.categoryContainer}>
         {categories.map((category) => (
           <TouchableOpacity
             key={category}
@@ -25,6 +25,7 @@ const CategoryFilter = ({ categories, selectedCategory, onSelectCategory, onClea
           </TouchableOpacity>
         ))}
       </ScrollView>
+      {/* כפתור Clear בשורה נפרדת */}
       <TouchableOpacity style={styles.clearButton} onPress={onClearFilter}>
         <Text style={styles.clearButtonText}>Clear Filter</Text>
       </TouchableOpacity>
@@ -36,8 +37,9 @@ const styles = StyleSheet.create({
   categoryContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 10,
     flexWrap: 'nowrap', // הגדרת גלילה אופקית
+
   },
   categoryButton: {
     borderWidth: 1,
@@ -67,6 +69,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'transparent', // כפתור שקוף
     borderWidth: 1,
     borderColor: '#FF6347', // צבע המסגרת של כפתור Clear
+    alignSelf: 'center', // מרכז את כפתור ה-Clear במרכז
   },
   clearButtonText: {
     color: '#FF6347',
