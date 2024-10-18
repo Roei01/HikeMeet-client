@@ -20,7 +20,7 @@ const ProfileScreen = () => {
       }
 
       // קריאה לשרת עם הטוקן
-      const response = await axios.get('http://172.20.10.4:3000/api/profile', {
+      const response = await axios.get('http://192.168.1.12:3000/api/profile', {
         headers: {
           Authorization: `Bearer ${token}`,
         },

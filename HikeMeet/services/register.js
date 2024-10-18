@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'http://172.20.10.4:3000/api';
+const BASE_URL = 'http://192.168.1.12:3000/api';
 
 export const requestVerificationCode = async (username, email, password) => {
   try {

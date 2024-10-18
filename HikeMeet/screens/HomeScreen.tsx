@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, ScrollView, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import { StackNavigationProp } from '@react-navigation/stack';
 import ProfileImage from '../components/ProfileImage';
 
@@ -18,49 +18,72 @@ type Props = {
 
 const HomeScreen: React.FC<Props> = ({ navigation }) => {
   return (
-    <View style={styles.container}>
+    <ImageBackground
+      source={require('../assets/maps.jpg')} // עדכון התמונה כאן
+      style={styles.background}
+      resizeMode="cover"
+    >
       <ScrollView style={styles.contentContainer}>
         {/* אזור תמונת הפרופיל */}
         <View style={styles.headerContainer}>
           <ProfileImage navigation={navigation} />
-          <Text style={styles.greetingText}>Hi, Welcome to HikeMeet!</Text>
+          <Text style={styles.greetingText}>Explore</Text>
         </View>
 
-        {/* אזור חיפוש */}
-        <View style={styles.searchContainer}>
-          <Text style={styles.searchText}>Search for Trips</Text>
-        </View>
 
-        {/* קטגוריות */}
-        <View style={styles.categoriesContainer}>
-          <Text style={styles.sectionTitle}>Categories</Text>
-          <View style={styles.categoryRow}>
-            <TouchableOpacity style={styles.categoryCard} onPress={() => navigation.navigate('Search')}>
-              <Text style={styles.categoryTitle}>Search for Trips</Text>
-              <Text style={styles.categoryTaskCount}>Find amazing trips!</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={[styles.categoryCard, { backgroundColor: '#d1e7dd' }]} onPress={() => navigation.navigate('SearchByArea')}>
-              <Text style={styles.categoryTitle}>Search By Area</Text>
-              <Text style={styles.categoryTaskCount}>Explore by location</Text>
-            </TouchableOpacity>
+        {/* כרטיס האטרקציה */}
+        <TouchableOpacity onPress={() => navigation.navigate('SearchByArea')}>
+        <View style={styles.exploreCard}>
+          <Image
+            source={require('../assets/cenote.jpg')} // מסלול התמונה המקומית
+            style={styles.attractionImage}
+          />
+          <View style={styles.attractionDetails}>
+            <Text style={styles.attractionTitle}>Hallstatt</Text>
+            <Text style={styles.distanceText}>12.5 km away</Text>
+            <View style={styles.reviewsContainer}>
+              <Image source={{ uri: 'https://via.placeholder.com/50' }} style={styles.reviewerImage} />
+              <Image source={{ uri: 'https://via.placeholder.com/50' }} style={styles.reviewerImage} />
+              <Image source={{ uri: 'https://via.placeholder.com/50' }} style={styles.reviewerImage} />
+              <Text style={styles.reviewsText}>48 Travel Bloggers reviewed this place</Text>
+            </View>
           </View>
         </View>
+        </TouchableOpacity>
 
-        {/* כפתורים נוספים */}
+        {/* כפתור Start */}
+        <TouchableOpacity style={styles.startButton} onPress={() => navigation.navigate('Search')}>
+          <Text style={styles.startButtonText}>Start</Text>
+        </TouchableOpacity>
+
+        {/* ניווט */}
+        <View style={styles.navBar}>
+          <TouchableOpacity>
+            <Text style={styles.navIcon}>📍</Text>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.navIcon}>🏠</Text>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.navIcon}>🔍</Text>
+          </TouchableOpacity>
+          <TouchableOpacity>
+            <Text style={styles.navIcon}>📅</Text>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
-    </View>
+    </ImageBackground>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  background: {
     flex: 1,
-    padding: 20,
-    backgroundColor: '#f8f8f8',
+    width: Dimensions.get('window').width,
+    height: Dimensions.get('window').height,
   },
   contentContainer: {
-    flex: 1,
+    padding: 20,
   },
   headerContainer: {
     flexDirection: 'row',
@@ -70,54 +93,75 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   greetingText: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#333',
-    flex: 1,
-    textAlign: 'left',
   },
-  searchContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f0f0f0',
-    borderRadius: 10,
-    padding: 10,
+  exploreCard: {
+    backgroundColor: '#8ea4ab',
+    borderRadius: 15,
+    overflow: 'hidden',
     marginBottom: 20,
   },
-  searchText: {
-    fontSize: 18,
-    color: '#888',
-    marginLeft: 10,
+  attractionImage: {
+    width: '100%',
+    height: 200,
+    borderTopLeftRadius: 15,
+    borderTopRightRadius: 15,
   },
-  categoriesContainer: {
-    marginBottom: 20,
+  attractionDetails: {
+    padding: 15,
   },
-  sectionTitle: {
+  attractionTitle: {
+
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 10,
+    marginBottom: 5,
   },
-  categoryRow: {
+  distanceText: {
+    fontSize: 16,
+    color: '#777',
+    marginBottom: 15,
+  },
+  reviewsContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  categoryCard: {
-    width: '48%',
-    padding: 20,
-    backgroundColor: '#fbe7c6',
-    borderRadius: 15,
     alignItems: 'center',
   },
-  categoryTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
+  reviewerImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    marginRight: 5,
   },
-  categoryTaskCount: {
+  reviewsText: {
     fontSize: 14,
     color: '#777',
-    marginTop: 10,
+    marginLeft: 10,
+  },
+  startButton: {
+    backgroundColor: '#b0abab',
+    paddingVertical: 15,
+    borderRadius: 25,
+    alignItems: 'center',
+    marginVertical: 20,
+    width: 2,
+    alignSelf: 'center',
+  },
+  startButtonText: {
+    color: '#1c1a1a',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  navBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#fff',
+    paddingVertical: 10,
+    borderRadius: 15,
+    marginTop: 140,
+  },
+  navIcon: {
+    fontSize: 24,
   },
 });
 
